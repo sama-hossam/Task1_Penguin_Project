@@ -11,7 +11,7 @@ class AdalineModel:
         self.w2 = 0
 
     def activation(self, v):
-        return v
+        return 1 if v >= 0 else -1
 
     def train(self, X, y):
         if self.use_bias:
@@ -31,6 +31,7 @@ class AdalineModel:
                 x2 = X[i][1]
                 
                 v = (self.w0 * x0) + (self.w1 * x1) + (self.w2 * x2)
+              
                 error = y[i] - v
                 total_error += error ** 2
                 
@@ -52,7 +53,8 @@ class AdalineModel:
             x2 = X_test[i][1]
             
             v = (self.w0 * x0) + (self.w1 * x1) + (self.w2 * x2)
-            y_pred = 1 if v >= 0 else -1
+            y_pred = self.activation(v)
+
             predictions.append(y_pred)
             if y_pred == y_test[i]:
                 correct += 1

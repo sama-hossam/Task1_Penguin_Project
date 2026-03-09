@@ -14,7 +14,7 @@ class PerceptronModel:
         return 1 if v >= 0 else -1
 
     def train(self, X, y):
-        # تهيئة الأوزان بشكل عشوائي صغير
+        
         if self.use_bias:
             self.w0 = np.random.rand() * 0.01  # Bias
             self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
@@ -24,7 +24,6 @@ class PerceptronModel:
             self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
             self.w2 = np.random.rand() * 0.01  # Weight for Feature 2
         
-        # التدريب
         for _ in range(self.epochs):
             for i in range(len(X)):
                 x0 = 1 if self.use_bias else 0

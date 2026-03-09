@@ -13,19 +13,25 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
     numeric_cols = ['CulmenLength', 'CulmenDepth', 'FlipperLength', 'BodyMass']
     for col in numeric_cols:
         df[col] = df[col].fillna(df.groupby('Species')[col].transform('mean'))
+
+  
     
+    #normalization  
+    for col in numeric_cols:
+        df[col] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
     
+    # label encoding for OriginLocation
+    le = LabelEncoder()
+    df['OriginLocation'] = le.fit_transform(df['OriginLocation'])
+    df['OriginLocation']=df['OriginLocation'].replace(0,-1)
+
     df_filtered = df[df['Species'].isin([class1, class2])].copy()
     
     
     le = LabelEncoder()
     df_filtered['Target'] = le.fit_transform(df_filtered['Species'])
-    
+    df_filtered['Target'] = df_filtered['Target'].replace(0, -1)
    
-   # target encoding for OriginLocation
-    te = TargetEncoder()
-    df_filtered['OriginLocation'] = te.fit_transform( df_filtered['OriginLocation'],df_filtered['Species'])
-    
    
     X = df_filtered[[feat1, feat2]].values.astype(float)
     y = df_filtered['Target'].values

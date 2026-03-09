@@ -5,6 +5,7 @@ import pandas as pd
 from models.slp import PerceptronModel
 from models.adaline import AdalineModel
 from utils.confusion_matrix import confusion_matrix
+from utils.plotting import plot_results
 from preprocessing import preprocess_data
 
 model = None
@@ -130,7 +131,7 @@ def run_gui():
 
         # preprocessing
         
-        X_train, X_test, y_train, y_test = preprocess_data( "D:/3rd year/2nd term/Neural Network/Penguin_Project/data/penguins.csv",feat1, feat2, class1, class2)
+        X_train, y_train, X_test, y_test = preprocess_data( "C:/Users/Smaa Hossam/Desktop/NN_task1/Task1_Penguin_Project/data/penguins.csv",feat1, feat2, class1, class2)
 
         # choose model
         if algorithm == "Perceptron":
@@ -151,11 +152,12 @@ def run_gui():
             )
 
         model.train(X_train, y_train)
+        plot_results(X_test, y_test, model, feat1, feat2)
 
         accuracy, predictions = model.test(X_test, y_test)
 
         TP, TN, FP, FN = confusion_matrix(y_test, predictions)
-
+        
         result = f"""
 Accuracy: {accuracy:.2f}
 
