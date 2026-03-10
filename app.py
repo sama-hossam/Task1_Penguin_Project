@@ -5,7 +5,7 @@ import pandas as pd
 from models.slp import PerceptronModel
 from models.adaline import AdalineModel
 from utils.confusion_matrix import confusion_matrix
-from utils.plotting import plot_results
+from utils.plotting import decision_boundary
 from preprocessing import preprocess_data
 
 model = None
@@ -152,7 +152,7 @@ def run_gui():
             )
 
         model.train(X_train, y_train)
-        plot_results(X_test, y_test, model, feat1, feat2)
+        decision_boundary(model, X_test, y_test, feat1, feat2)
 
         accuracy, predictions = model.test(X_test, y_test)
 

@@ -1,8 +1,9 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import TargetEncoder
+
+
 
 def preprocess_data(file_path, feat1, feat2, class1, class2):
    
@@ -14,16 +15,11 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
     for col in numeric_cols:
         df[col] = df[col].fillna(df.groupby('Species')[col].transform('mean'))
 
-  
-    
-    #normalization  
-    for col in numeric_cols:
-        df[col] = (df[col] - df[col].min()) / (df[col].max() - df[col].min())
     
     # label encoding for OriginLocation
     le = LabelEncoder()
     df['OriginLocation'] = le.fit_transform(df['OriginLocation'])
-    df['OriginLocation']=df['OriginLocation'].replace(0,-1)
+    df['OriginLocation']=df['OriginLocation']
 
     df_filtered = df[df['Species'].isin([class1, class2])].copy()
     
@@ -43,5 +39,8 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
         stratify=y,
         random_state=42
     )
+    scale=StandardScaler()
+    X_train=scale.fit_transform(X_train)
+    X_test=scale.transform(X_test)
     
     return X_train, y_train, X_test, y_test
