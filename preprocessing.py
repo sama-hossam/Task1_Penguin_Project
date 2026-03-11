@@ -24,9 +24,7 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
     df_filtered = df[df['Species'].isin([class1, class2])].copy()
     
     
-    le = LabelEncoder()
-    df_filtered['Target'] = le.fit_transform(df_filtered['Species'])
-    df_filtered['Target'] = df_filtered['Target'].replace(0, -1)
+    df_filtered['Target'] = df_filtered['Species'].apply(lambda x: 1 if x == class1 else -1)
    
    
     X = df_filtered[[feat1, feat2]].values.astype(float)
@@ -39,8 +37,19 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
         stratify=y,
         random_state=42
     )
+    # save the scale for later use in prediction
+
     scale=StandardScaler()
     X_train=scale.fit_transform(X_train)
     X_test=scale.transform(X_test)
-    
-    return X_train, y_train, X_test, y_test
+    print("\nTraining samples per class:")
+    print("Class -1:", sum(y_train == -1))
+    print("Class 1 :", sum(y_train == 1))
+
+    print("\nTesting samples per class:")
+    print("Class -1:", sum(y_test == -1))
+    print("Class 1 :", sum(y_test == 1))
+
+    print("\nTrain size:", len(X_train))
+    print("Test size:", len(X_test))
+    return X_train, y_train, X_test, y_test,scale, le

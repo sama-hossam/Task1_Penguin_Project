@@ -14,25 +14,27 @@ class PerceptronModel:
         return 1 if v >= 0 else -1
 
     def train(self, X, y):
-        
+        self.w0 = np.random.rand() * 0.01  # Bias
+        self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
         if self.use_bias:
-            self.w0 = np.random.rand() * 0.01  # Bias
-            self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
+            
             self.w2 = np.random.rand() * 0.01  # Weight for Feature 2
         else:
             self.w0 = 0  # Bias = 0
-            self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
-            self.w2 = np.random.rand() * 0.01  # Weight for Feature 2
+
         
         for _ in range(self.epochs):
-            for i in range(len(X)):
+            random_indices = np.random.permutation(len(X))
+            X_shuffled=X[random_indices]
+            y_shuffled=y[random_indices]
+            for i in range(len(X_shuffled)):
                 x0 = 1 if self.use_bias else 0
-                x1 = X[i][0]
-                x2 = X[i][1]
+                x1 = X_shuffled[i][0]
+                x2 = X_shuffled[i][1]
                 
                 v = (self.w0 * x0) + (self.w1 * x1) + (self.w2 * x2)
                 y_pred = self.activation(v)
-                error = y[i] - y_pred
+                error = y_shuffled[i] - y_pred
                 
                 if error != 0:
                     self.w0 += self.lr * error * x0

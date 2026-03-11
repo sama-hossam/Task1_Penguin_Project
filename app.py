@@ -1,222 +1,155 @@
 import tkinter as tk
 from tkinter import ttk
-import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
+# Custom imports
 from models.slp import PerceptronModel
 from models.adaline import AdalineModel
 from utils.confusion_matrix import confusion_matrix
-from utils.plotting import decision_boundary
 from preprocessing import preprocess_data
 
+# Global variables
 model = None
-
+current_scale = None
+location_encoder = None
+canvas = None  # To hold the plot reference
 
 def run_gui():
-
     window = tk.Tk()
-    window.title("Penguins Classifier")
-    window.geometry("450x650")
+    window.title("🐧 Penguins Advanced Classifier Pro")
+    window.geometry("1300x750")  # Wider window for the integrated plot
+    window.configure(bg="#f8f9fa")
 
-    # -------- Feature Selection --------
-    tk.Label(window, text="Feature 1").pack()
+    # --- Header ---
+    header = tk.Label(window, text="Integrated Penguin Analysis Dashboard", 
+                      font=("Helvetica", 18, "bold"), bg="#2c3e50", fg="white", pady=10)
+    header.grid(row=0, column=0, columnspan=3, sticky="ew")
 
-    feat1_box = ttk.Combobox(window)
-    feat1_box['values'] = (
-        "CulmenLength",
-        "CulmenDepth",
-        "FlipperLength",
-        "BodyMass",
-        "OriginLocation"
-    )
-    feat1_box.pack()
+    # --- 1. Left Frame: Configuration ---
+    settings_frame = tk.LabelFrame(window, text=" ⚙️ Configuration ", font=("Arial", 11, "bold"), 
+                                   padx=15, pady=15, bg="white")
+    settings_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-    tk.Label(window, text="Feature 2").pack()
+    features = ["CulmenLength", "CulmenDepth", "FlipperLength", "BodyMass", "OriginLocation"]
+    classes = ["Adelie", "Gentoo", "Chinstrap"]
 
-    feat2_box = ttk.Combobox(window)
-    feat2_box['values'] = (
-        "CulmenLength",
-        "CulmenDepth",
-        "FlipperLength",
-        "BodyMass",
-        "OriginLocation"
-    )
-    feat2_box.pack()
+    tk.Label(settings_frame, text="Feature 1:", bg="white").grid(row=0, column=0, sticky="w")
+    feat1_box = ttk.Combobox(settings_frame, values=features, width=20)
+    feat1_box.grid(row=0, column=1, pady=5)
 
-    # -------- Class Selection --------
-    tk.Label(window, text="Class 1").pack()
+    tk.Label(settings_frame, text="Feature 2:", bg="white").grid(row=1, column=0, sticky="w")
+    feat2_box = ttk.Combobox(settings_frame, values=features, width=20)
+    feat2_box.grid(row=1, column=1, pady=5)
 
-    class1_box = ttk.Combobox(window)
-    class1_box['values'] = ("Adelie", "Gentoo", "Chinstrap")
-    class1_box.pack()
+    tk.Label(settings_frame, text="Class 1:", bg="white").grid(row=2, column=0, sticky="w")
+    c1_box = ttk.Combobox(settings_frame, values=classes, width=20)
+    c1_box.grid(row=2, column=1, pady=5)
 
-    tk.Label(window, text="Class 2").pack()
+    tk.Label(settings_frame, text="Class 2:", bg="white").grid(row=3, column=0, sticky="w")
+    c2_box = ttk.Combobox(settings_frame, values=classes, width=20)
+    c2_box.grid(row=3, column=1, pady=5)
 
-    class2_box = ttk.Combobox(window)
-    class2_box['values'] = ("Adelie", "Gentoo", "Chinstrap")
-    class2_box.pack()
+    # Hyperparameters
+    lr_entry = tk.Entry(settings_frame, width=23); lr_entry.insert(0, "0.01")
+    epoch_entry = tk.Entry(settings_frame, width=23); epoch_entry.insert(0, "100")
+    
+    tk.Label(settings_frame, text="LR:", bg="white").grid(row=4, column=0, sticky="w")
+    lr_entry.grid(row=4, column=1, pady=5)
+    tk.Label(settings_frame, text="Epochs:", bg="white").grid(row=5, column=0, sticky="w")
+    epoch_entry.grid(row=5, column=1, pady=5)
 
-    # -------- Learning Rate --------
-    tk.Label(window, text="Learning Rate").pack()
+    bias_var = tk.IntVar(value=1)
+    tk.Checkbutton(settings_frame, text="Use Bias", variable=bias_var, bg="white").grid(row=6, column=1, sticky="w")
 
-    lr_entry = tk.Entry(window)
-    lr_entry.pack()
+    algo_var = tk.StringVar(value="Perceptron")
+    tk.Radiobutton(settings_frame, text="Perceptron", variable=algo_var, value="Perceptron", bg="white").grid(row=7, column=1, sticky="w")
+    tk.Radiobutton(settings_frame, text="Adaline", variable=algo_var, value="Adaline", bg="white").grid(row=8, column=1, sticky="w")
 
-    # -------- Epochs --------
-    tk.Label(window, text="Epochs").pack()
+    # --- 2. Middle Frame: Results & Predict ---
+    middle_frame = tk.Frame(window, bg="#f8f9fa")
+    middle_frame.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
-    epoch_entry = tk.Entry(window)
-    epoch_entry.pack()
+    result_label = tk.Label(middle_frame, text="Results here...", font=("Courier", 10), bg="white", relief="sunken", height=8, width=35)
+    result_label.pack(pady=5)
 
-    # -------- MSE Threshold --------
-    tk.Label(window, text="MSE Threshold (Adaline)").pack()
+    predict_frame = tk.LabelFrame(middle_frame, text=" 🔍 Prediction ", bg="#eef2f7", padx=10, pady=10)
+    predict_frame.pack(fill="x", pady=10)
+    
+    sample1 = tk.Entry(predict_frame, width=15); sample1.pack(pady=2)
+    sample2 = tk.Entry(predict_frame, width=15); sample2.pack(pady=2)
+    classify_result = tk.Label(predict_frame, text="Detected: --", font=("Arial", 12, "bold"), bg="#eef2f7")
+    classify_result.pack(pady=5)
 
-    mse_entry = tk.Entry(window)
-    mse_entry.pack()
+    # --- 3. Right Frame: The Integrated Plot Area ---
+    plot_frame = tk.LabelFrame(window, text=" 📈 Visualization Area ", font=("Arial", 11, "bold"), bg="white")
+    plot_frame.grid(row=1, column=2, padx=20, pady=10, sticky="nsew")
 
-    # -------- Bias --------
-    bias_var = tk.IntVar()
+    # --- Embedded Plot Function ---
+    def update_plot(model, X, y, f1, f2):
+        global canvas
+        if canvas: canvas.get_tk_widget().destroy() # Clear old plot
 
-    bias_check = tk.Checkbutton(
-        window,
-        text="Use Bias",
-        variable=bias_var
-    )
-    bias_check.pack()
+        fig, ax = plt.subplots(figsize=(5, 4), dpi=100)
+        ax.scatter(X[y == 1][:, 0], X[y == 1][:, 1], color='red', label='Class 1')
+        ax.scatter(X[y == -1][:, 0], X[y == -1][:, 1], color='blue', label='Class -1')
 
-    # -------- Algorithm --------
-    algo_var = tk.StringVar()
-    algo_var.set("Perceptron")
-
-    tk.Label(window, text="Algorithm").pack()
-
-    tk.Radiobutton(
-        window,
-        text="Perceptron",
-        variable=algo_var,
-        value="Perceptron"
-    ).pack()
-
-    tk.Radiobutton(
-        window,
-        text="Adaline",
-        variable=algo_var,
-        value="Adaline"
-    ).pack()
-
-    # -------- Results --------
-    result_label = tk.Label(window, text="")
-    result_label.pack(pady=10)
-
-    # -------- Train Function --------
-    def train_model():
-
-        global model
-
-        feat1 = feat1_box.get()
-        feat2 = feat2_box.get()
-
-        class1 = class1_box.get()
-        class2 = class2_box.get()
-
-        lr = float(lr_entry.get())
-        epochs = int(epoch_entry.get())
-
-        bias = True if bias_var.get() == 1 else False
-
-        algorithm = algo_var.get()
-
-        mse_threshold = 0
-        if mse_entry.get() != "":
-            mse_threshold = float(mse_entry.get())
-
-        # preprocessing
+        x1_min, x1_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+        x1_vals = np.linspace(x1_min, x1_max, 100)
         
-        X_train, y_train, X_test, y_test = preprocess_data( "C:/Users/Smaa Hossam/Desktop/NN_task1/Task1_Penguin_Project/data/penguins.csv",feat1, feat2, class1, class2)
-
-        # choose model
-        if algorithm == "Perceptron":
-
-            model = PerceptronModel(
-                lr,
-                epochs,
-                bias
-            )
-
+        # Boundary Line math
+        if not model.use_bias:
+            x2_vals = -(model.w1 * x1_vals) / model.w2
         else:
+            x2_vals = -(model.w1 * x1_vals + model.w0) / model.w2
+            
+        ax.plot(x1_vals, x2_vals, color='black', linewidth=2)
+        ax.set_xlabel(f1); ax.set_ylabel(f2)
+        ax.set_title("Decision Boundary")
+        ax.grid(True, alpha=0.3)
 
-            model = AdalineModel(
-                lr,
-                epochs,
-                mse_threshold,
-                bias
-            )
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True)
 
-        model.train(X_train, y_train)
-        decision_boundary(model, X_test, y_test, feat1, feat2)
+    # --- Logic ---
+    def train_model():
+        global model, current_scale, location_encoder
+        try:
+            f1, f2 = feat1_box.get(), feat2_box.get()
+            c1, c2 = c1_box.get(), c2_box.get()
+            
+            X_train, y_train, X_test, y_test, current_scale, location_encoder = preprocess_data(
+                "D:/3rd year/2nd term/Neural Network/Penguin_Project/data/penguins.csv", f1, f2, c1, c2)
 
-        accuracy, predictions = model.test(X_test, y_test)
+            if algo_var.get() == "Perceptron":
+                model = PerceptronModel(float(lr_entry.get()), int(epoch_entry.get()), bool(bias_var.get()))
+            else:
+                model = AdalineModel(float(lr_entry.get()), int(epoch_entry.get()), bool(bias_var.get()), 0.001)
 
-        TP, TN, FP, FN = confusion_matrix(y_test, predictions)
-        
-        result = f"""
-Accuracy: {accuracy:.2f}
-
-TP = {TP}
-TN = {TN}
-FP = {FP}
-FN = {FN}
-"""
-
-        result_label.config(text=result)
-
-    # -------- Train Button --------
-    train_button = tk.Button(
-        window,
-        text="Train Model",
-        command=train_model
-    )
-
-    train_button.pack(pady=20)
-
-    # -------- Single Sample --------
-    tk.Label(window, text="Classify Single Sample").pack()
-
-    sample1 = tk.Entry(window)
-    sample1.pack()
-
-    sample2 = tk.Entry(window)
-    sample2.pack()
-
-    classify_result = tk.Label(window, text="")
-    classify_result.pack()
+            model.train(X_train, y_train)
+            acc, preds = model.test(X_test, y_test)
+            tp, tn, fp, fn = confusion_matrix(y_test, preds)
+            
+            result_label.config(text=f"Accuracy: {acc:.2f}%\nTP: {tp} | FN: {fn}\nFP: {fp} | TN: {tn}")
+            update_plot(model, X_train, y_train, f1, f2)
+        except Exception as e:
+            result_label.config(text=f"Error: {str(e)}")
 
     def classify_sample():
+        if not model: return
+        try:
+            # Classification logic same as before...
+            v1, v2 = float(sample1.get()), float(sample2.get())
+            sc = current_scale.transform([[v1, v2]])[0]
+            net = (model.w0 * (1 if bias_var.get() else 0)) + (model.w1 * sc[0]) + (model.w2 * sc[1])
+            res = c1_box.get() if net >= 0 else c2_box.get()
+            classify_result.config(text=f"Result: {res}", fg="#27ae60")
+        except: pass
 
-        if model is None:
-            classify_result.config(text="Train model first")
-            return
-        
-        # problem here because of the target encoding for OriginLocation, need to handle it properly in the future 
-
-        x1 = float(sample1.get())
-        x2 = float(sample2.get())         
-
-
-
-        x0 = 1 if bias_var.get() == 1 else 0
-
-        net = model.w0*x0 + model.w1*x1 + model.w2*x2
-
-        y_pred = 1 if net > 0 else 0
-
-        classify_result.config(text=f"Prediction: {y_pred}")
-
-    classify_button = tk.Button(
-        window,
-        text="Classify",
-        command=classify_sample
-    )
-
-    classify_button.pack(pady=10)
+    # Buttons
+    tk.Button(settings_frame, text="🚀 TRAIN", command=train_model, bg="#27ae60", fg="white", font=("Arial", 10, "bold")).grid(row=10, column=0, columnspan=2, pady=20, sticky="ew")
+    tk.Button(predict_frame, text="🎯 CLASSIFY", command=classify_sample, bg="#2980b9", fg="white").pack(pady=5)
 
     window.mainloop()

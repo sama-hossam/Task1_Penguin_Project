@@ -24,15 +24,18 @@ class AdalineModel:
             self.w2 = np.random.rand() * 0.01
         
         for epoch in range(self.epochs):
+            random_indices = np.random.permutation(len(X))
+            X_shuffled=X[random_indices]
+            y_shuffled=y[random_indices]
             total_error = 0
             for i in range(len(X)):
                 x0 = 1 if self.use_bias else 0
-                x1 = X[i][0]
-                x2 = X[i][1]
+                x1 = X_shuffled[i][0]
+                x2 = X_shuffled[i][1]
                 
                 v = (self.w0 * x0) + (self.w1 * x1) + (self.w2 * x2)
-              
-                error = y[i] - v
+                
+                error = y_shuffled[i] - v
                 total_error += error ** 2
                 
                 if error != 0:
