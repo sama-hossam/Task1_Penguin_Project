@@ -14,11 +14,11 @@ class PerceptronModel:
         return 1 if v >= 0 else -1
 
     def train(self, X, y):
-        self.w0 = np.random.rand() * 0.01  # Bias
-        self.w1 = np.random.rand() * 0.01  # Weight for Feature 1
+        self.w1 = np.random.rand() * 0.01  # Bias
+        self.w2 = np.random.rand() * 0.01  # Weight for Feature 1
         if self.use_bias:
             
-            self.w2 = np.random.rand() * 0.01  # Weight for Feature 2
+            self.w0 = np.random.rand() * 0.01  # Weight for Feature 2
         else:
             self.w0 = 0  # Bias = 0
 

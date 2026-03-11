@@ -16,10 +16,16 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
         df[col] = df[col].fillna(df.groupby('Species')[col].transform('mean'))
 
     
-    # label encoding for OriginLocation
-    le = LabelEncoder()
-    df['OriginLocation'] = le.fit_transform(df['OriginLocation'])
-    df['OriginLocation']=df['OriginLocation']
+    # mapping categorical values of 'OriginLocation' to numerical values
+    
+
+    location_mapping = {
+    'Torgersen': 0,
+    'Biscoe': 1,
+    'Dream': 2
+}
+    df['OriginLocation'] = df['OriginLocation'].map(location_mapping)
+    
 
     df_filtered = df[df['Species'].isin([class1, class2])].copy()
     
@@ -52,4 +58,4 @@ def preprocess_data(file_path, feat1, feat2, class1, class2):
 
     print("\nTrain size:", len(X_train))
     print("Test size:", len(X_test))
-    return X_train, y_train, X_test, y_test,scale, le
+    return X_train, y_train, X_test, y_test,scale
