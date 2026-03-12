@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def decision_boundary(model,X_test,Y_test,feat1,feat2):
+def decision_boundary(model,X_train,Y_train,X_test,Y_test,feat1,feat2):
      
      plt.figure(figsize=(8,8))
-     plt.scatter(X_test[Y_test==1][:,0],X_test[Y_test==1][:,1],color='red',label='Class 1')  
-     plt.scatter(X_test[Y_test==-1][:,0],X_test[Y_test==-1][:,1],color='blue',label='Class 2')
+     
+     plt.scatter(X_train[Y_train == 1][:, 0], X_train[Y_train == 1][:, 1], color='red', label='Train: Class 1', edgecolors='k', s=50)
+     plt.scatter(X_train[Y_train == -1][:, 0], X_train[Y_train == -1][:, 1], color='blue', label='Train: Class 2', edgecolors='k', s=50)
+     plt.scatter(X_test[Y_test == 1][:, 0], X_test[Y_test == 1][:, 1],  color='red', marker='x', label='Test: Class 1', s=80)
+     plt.scatter(X_test[Y_test == -1][:, 0], X_test[Y_test == -1][:, 1], color='blue', marker='x', label='Test: Class 2', s=80)
      if model.w2 ==0:
         return
      x1_min=X_test[:,0].min()

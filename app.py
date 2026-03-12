@@ -102,7 +102,7 @@ def run_gui():
 
     # --- Functions ---
     def train_model():
-        global model, current_scale, location_encoder
+        global model, current_scale
         try:
             feat1, feat2 = feat1_box.get(), feat2_box.get()
             class1, class2 = class1_box.get(), class2_box.get()
@@ -130,7 +130,7 @@ def run_gui():
                      f"\nConfusion Matrix:\n       | Pred: 1 | Pred: -1\nAct: 1 | TP: {TP:2d}  | FN: {FN:2d}\nAct:-1 | FP: {FP:2d}  | TN: {TN:2d}"
             
             result_label.config(text=result)
-            decision_boundary(model, X_train, y_train, feat1, feat2)
+            decision_boundary(model, X_train, y_train,X_test,y_test, feat1, feat2)
         except Exception as e:
             result_label.config(text=f"Error: {str(e)}")
 
