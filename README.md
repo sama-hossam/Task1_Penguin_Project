@@ -45,4 +45,4 @@ Adaline uses the "Delta Rule" to minimize the cost function (MSE).
 
 ---
 
-**Developed with ❤️ by [Your Name]**
+
